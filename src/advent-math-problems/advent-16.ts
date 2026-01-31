@@ -26,7 +26,7 @@ function doesReversedSquareMatch(n: number) {
   return reversedSquared === reverse(n * n);
 }
 
-function logDetails(n: number) {
+function infoDetails(n: number) {
   const digitsSum = sumDigits(n);
   const reversed = reverse(n);
   const reversedSquared = reversed * reversed;
@@ -46,7 +46,9 @@ type FilterOptions = {
 };
 
 function filter(start: number, end: number, options?: FilterOptions) {
-  console.log(`Filtering from ${start} to ${end} (${end - start + 1} numbers)`);
+  console.info(
+    `Filtering from ${start} to ${end} (${end - start + 1} numbers)`,
+  );
 
   // Merge options
   const effectiveOptions: Required<FilterOptions> = {
@@ -57,7 +59,7 @@ function filter(start: number, end: number, options?: FilterOptions) {
   // Extract options
   const digitsSum = effectiveOptions.digitsSum;
 
-  console.log(`  Digits sum: ${digitsSum}`);
+  console.info(`  Digits sum: ${digitsSum}`);
 
   let remaining = [];
 
@@ -68,23 +70,23 @@ function filter(start: number, end: number, options?: FilterOptions) {
     }
   }
 
-  console.log(
+  console.info(
     `${remaining.length} numbers left with digits that sum to ${digitsSum}`,
   );
 
   remaining = remaining.filter((n) => !isPalindrome(n));
 
-  console.log(`${remaining.length} numbers left that are not palindromes`);
+  console.info(`${remaining.length} numbers left that are not palindromes`);
 
   remaining = remaining.filter(doesReversedSquareMatch);
 
-  console.log(
+  console.info(
     `${remaining.length} numbers left that are equal to their revered squared when squared`,
   );
 
-  console.log(remaining);
+  console.info(remaining);
 
-  remaining.forEach(logDetails);
+  remaining.forEach(infoDetails);
 }
 
 export function main() {

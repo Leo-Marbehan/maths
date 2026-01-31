@@ -1,7 +1,7 @@
-import { main as adventMain } from "./advent-math-problems/advent-20";
+import { main as satisfactoryMain } from "./satisfactory/main";
 
 function main() {
-  adventMain();
+  satisfactoryMain();
 }
 
 main();
