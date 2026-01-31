@@ -34,9 +34,9 @@ function logDetails(n: number) {
 
   console.table({
     Number: n,
-    'Digits sum': digitsSum,
+    "Digits sum": digitsSum,
     Reversed: reversed,
-    'Reversed squared': reversedSquared,
+    "Reversed squared": reversedSquared,
     Squared: squared,
   });
 }

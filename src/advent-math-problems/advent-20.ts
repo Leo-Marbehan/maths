@@ -9,7 +9,7 @@ function getValue(position: number, solution: number[]): number {
 }
 
 function getStringValue(position: number, solution: number[]): string {
-  return getValue(position, solution).toString().padStart(2, ' ');
+  return getValue(position, solution).toString().padStart(2, " ");
 }
 
 function verifyDifference(
@@ -81,11 +81,11 @@ function printSolution(solution: number[]): void {
   const longest = Math.max(...rows.map((row) => row.length));
 
   const formattedRows = rows.map((row) => {
-    const spaces = ' '.repeat(Math.round((longest - row.length) / 2));
+    const spaces = " ".repeat(Math.round((longest - row.length) / 2));
     return `${spaces}${row}${spaces}`;
   });
 
-  console.log(formattedRows.join('\n'));
+  console.log(formattedRows.join("\n"));
 }
 
 function solveRecursive(solution: number[], missing: number[]): void {
