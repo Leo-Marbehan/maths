@@ -1,0 +1,29 @@
+{
+  "objectiveType": "maximize",
+  "coefficients": [-2, 1, 0, 0, 2],
+  "restrictions": [
+    "non-negative",
+    "non-negative",
+    "non-negative",
+    "non-negative",
+    "non-negative"
+  ],
+  "constraints": [
+    {
+      "type": "=",
+      "value": -2,
+      "coefficients": [-1, -1, 1, 0, 1]
+    },
+    {
+      "type": "=",
+      "value": 4,
+      "coefficients": [3, 2, 0, 1, -3]
+    },
+    {
+      "type": "=",
+      "value": 3,
+      "coefficients": [1, 2, 0, 0, -1]
+    }
+  ],
+  "constant": 0
+}
