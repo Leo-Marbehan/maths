@@ -46,12 +46,6 @@ class LinearProgramError extends Error {}
 
 class LinearProgramSizeError extends LinearProgramError {}
 
-class LinearProgramImpossibleError extends LinearProgramError {
-  constructor() {
-    super("Impossible linear program error");
-  }
-}
-
 class LinearProgramDeserializationError extends LinearProgramError {
   constructor(
     message: string,
@@ -166,7 +160,9 @@ export class LinearProgram {
       }
 
       if (constraintCoefficient === undefined) {
-        throw new LinearProgramImpossibleError();
+        throw new LinearProgramSizeError(
+          `Constraint coefficient at index ${i} is undefined in program with ${this.m} constraints`,
+        );
       }
 
       constraint.coefficients.push(constraintCoefficient);
@@ -616,3 +612,9 @@ export class LinearProgram {
     return program;
   }
 }
+
+export const privateExports = {
+  isObjectiveType,
+  isRestrictionType,
+  isConstraintType,
+};
