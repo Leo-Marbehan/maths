@@ -69,7 +69,7 @@ function filter(start: number, end: number, options?: FilterOptions) {
   }
 
   console.log(
-    `${remaining.length} numbers left with digits that sum to ${digitsSum}`
+    `${remaining.length} numbers left with digits that sum to ${digitsSum}`,
   );
 
   remaining = remaining.filter((n) => !isPalindrome(n));
@@ -79,7 +79,7 @@ function filter(start: number, end: number, options?: FilterOptions) {
   remaining = remaining.filter(doesReversedSquareMatch);
 
   console.log(
-    `${remaining.length} numbers left that are equal to their revered squared when squared`
+    `${remaining.length} numbers left that are equal to their revered squared when squared`,
   );
 
   console.log(remaining);

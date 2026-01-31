@@ -56,7 +56,7 @@ function filter(max: number) {
   remaining = remaining.filter((n) => sumPrimesBelow(n) % n === 0);
 
   console.log(
-    `${remaining.length} numbers left that divide the sum of lower primes`
+    `${remaining.length} numbers left that divide the sum of lower primes`,
   );
   console.log(remaining);
 }
