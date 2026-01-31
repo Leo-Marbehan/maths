@@ -1,15 +1,21 @@
 function getValue(position: number, solution: number[]): number {
-  return solution[position - 1]!;
+  const value = solution[position - 1];
+
+  if (value === undefined) {
+    throw new Error(`Missing value at position ${position}`);
+  }
+
+  return value;
 }
 
 function getStringValue(position: number, solution: number[]): string {
-  return getValue(position, solution).toString().padStart(2, ' ');
+  return getValue(position, solution).toString().padStart(2, " ");
 }
 
 function verifyDifference(
   position1: number,
   position2: number,
-  solution: number[]
+  solution: number[],
 ): boolean {
   const value1 = getValue(position1, solution);
   const value2 = getValue(position2, solution);
@@ -19,7 +25,7 @@ function verifyDifference(
 function verifySum(
   positions: number[],
   expected: number,
-  solution: number[]
+  solution: number[],
 ): boolean {
   let sum = 0;
   for (const position of positions) {
@@ -56,7 +62,7 @@ function printSolution(solution: number[]): void {
 
   const rows: string[] = [];
 
-  rows.push(`${s2}`);
+  rows.push(s2);
   rows.push(`/   \\`);
   rows.push(`${s1}      ${s3}`);
   rows.push(`|       |`);
@@ -75,11 +81,11 @@ function printSolution(solution: number[]): void {
   const longest = Math.max(...rows.map((row) => row.length));
 
   const formattedRows = rows.map((row) => {
-    const spaces = ' '.repeat(Math.round((longest - row.length) / 2));
+    const spaces = " ".repeat(Math.round((longest - row.length) / 2));
     return `${spaces}${row}${spaces}`;
   });
 
-  console.log(formattedRows.join('\n'));
+  console.log(formattedRows.join("\n"));
 }
 
 function solveRecursive(solution: number[], missing: number[]): void {
@@ -211,8 +217,7 @@ function solveRecursive(solution: number[], missing: number[]): void {
   }
 
   // Recursion
-  for (let i = 0; i < missing.length; i++) {
-    const number = missing[i]!;
+  for (const number of missing) {
     const newSolution = [...solution, number];
     const newMissing = missing.filter((n) => n !== number);
     solveRecursive(newSolution, newMissing);
