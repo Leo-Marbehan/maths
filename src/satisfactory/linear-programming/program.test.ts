@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "fs";
+import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 import { LinearProgram, privateExports } from "./program";
 
@@ -287,6 +287,39 @@ describe("LinearProgram", () => {
 
           expect(serializedNonStandardProgram).toBe(serializedStandardProgram);
         }
+      });
+    });
+
+    describe("pivot", () => {
+      it("temporary", () => {
+        const testDataDirectory = __dirname + "/../data/test/simplex-form/";
+
+        const testInputFile = readFileSync(
+          testDataDirectory + "test.json",
+          "utf-8",
+        );
+
+        const program = LinearProgram.deserialize(testInputFile);
+
+        program["pivot"](1, 1);
+
+        const serializedProgram = program.serialize();
+
+        writeFileSync(
+          testDataDirectory + "result.json",
+          serializedProgram,
+          "utf-8",
+        );
+
+        program["pivot"](2, 3);
+
+        const serializedProgram2 = program.serialize();
+
+        writeFileSync(
+          testDataDirectory + "result2.json",
+          serializedProgram2,
+          "utf-8",
+        );
       });
     });
   });
