@@ -1,0 +1,23 @@
+{
+  "objectiveType": "minimize",
+  "coefficients": [2, -1],
+  "restrictions": ["unrestricted", "non-negative"],
+  "constraints": [
+    {
+      "type": ">=",
+      "value": 2,
+      "coefficients": [1, 1]
+    },
+    {
+      "type": "<=",
+      "value": 4,
+      "coefficients": [3, 2]
+    },
+    {
+      "type": "=",
+      "value": 3,
+      "coefficients": [1, 2]
+    }
+  ],
+  "constant": 0
+}

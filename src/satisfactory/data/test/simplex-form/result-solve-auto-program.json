@@ -1,0 +1,58 @@
+{
+  "objectiveType": "maximize",
+  "coefficients": [
+    -44,
+    -28,
+    0,
+    0,
+    -12,
+    0
+  ],
+  "restrictions": [
+    "non-negative",
+    "non-negative",
+    "non-negative",
+    "non-negative",
+    "non-negative",
+    "non-negative"
+  ],
+  "constraints": [
+    {
+      "type": "=",
+      "value": 10,
+      "coefficients": [
+        2,
+        1,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "type": "=",
+      "value": 6,
+      "coefficients": [
+        0,
+        1,
+        0,
+        0,
+        -1,
+        1
+      ]
+    },
+    {
+      "type": "=",
+      "value": 4,
+      "coefficients": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "constant": 392
+}

@@ -34,7 +34,7 @@ function sumPrimesBelow(n: number) {
 }
 
 function filter(max: number) {
-  console.log(`Filtering from 2 to ${max} (${max - 1} numbers)`);
+  console.info(`Filtering from 2 to ${max} (${max - 1} numbers)`);
 
   let remaining = [];
 
@@ -44,21 +44,21 @@ function filter(max: number) {
     }
   }
 
-  console.log(`${remaining.length} prime number found below ${max}`);
-  console.log(remaining);
-  console.log(remaining.map((n) => ({ n, sum: sumPrimesBelow(n) })));
+  console.info(`${remaining.length} prime number found below ${max}`);
+  console.info(remaining);
+  console.info(remaining.map((n) => ({ n, sum: sumPrimesBelow(n) })));
 
   remaining = remaining.filter((n) => isPrime(reverse(n)));
 
-  console.log(`${remaining.length} numbers left with prime reverses`);
-  console.log(remaining);
+  console.info(`${remaining.length} numbers left with prime reverses`);
+  console.info(remaining);
 
   remaining = remaining.filter((n) => sumPrimesBelow(n) % n === 0);
 
-  console.log(
+  console.info(
     `${remaining.length} numbers left that divide the sum of lower primes`,
   );
-  console.log(remaining);
+  console.info(remaining);
 }
 
 export function main() {

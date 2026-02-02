@@ -85,7 +85,7 @@ function printSolution(solution: number[]): void {
     return `${spaces}${row}${spaces}`;
   });
 
-  console.log(formattedRows.join("\n"));
+  console.info(formattedRows.join("\n"));
 }
 
 function solveRecursive(solution: number[], missing: number[]): void {
@@ -232,7 +232,7 @@ function solve() {
 
   solveRecursive([], missing);
 
-  console.log(`${recursiveCallCount} recursive calls`);
+  console.info(`${recursiveCallCount} recursive calls`);
 }
 
 export function main() {
