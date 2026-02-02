@@ -290,7 +290,7 @@ describe("LinearProgram", () => {
       });
     });
 
-    describe("pivot", () => {
+    describe("temporary", () => {
       it("temporary", () => {
         const testDataDirectory = __dirname + "/../data/test/simplex-form/";
 
@@ -318,6 +318,104 @@ describe("LinearProgram", () => {
         writeFileSync(
           testDataDirectory + "result2.json",
           serializedProgram2,
+          "utf-8",
+        );
+      });
+
+      it("temporary", () => {
+        const testDataDirectory = __dirname + "/../data/test/simplex-form/";
+
+        const testInputFile = readFileSync(
+          testDataDirectory + "test-solve.json",
+          "utf-8",
+        );
+
+        const program = LinearProgram.deserialize(testInputFile);
+
+        program["isStandardForm"] = true;
+        program["isSimplexForm"] = true;
+
+        const solution = program["solveSimplexRecursive"](new Set([0, 1, 2]));
+
+        writeFileSync(
+          testDataDirectory + "result-solve.json",
+          JSON.stringify(solution),
+          "utf-8",
+        );
+        writeFileSync(
+          testDataDirectory + "result-solve-program.json",
+          program.serialize(),
+          "utf-8",
+        );
+      });
+
+      it("temporary", () => {
+        const testDataDirectory = __dirname + "/../data/test/simplex-form/";
+
+        const testInputFile = readFileSync(
+          testDataDirectory + "test-solve.json",
+          "utf-8",
+        );
+
+        const program = LinearProgram.deserialize(testInputFile);
+
+        const solution = program.solveSimplex();
+
+        console.log(solution);
+
+        writeFileSync(
+          testDataDirectory + "result-solve-auto.json",
+          JSON.stringify(
+            typeof solution !== "string" ? Array.from(solution) : solution,
+          ),
+          "utf-8",
+        );
+        writeFileSync(
+          testDataDirectory + "result-solve-auto-program.json",
+          program.serialize(),
+          "utf-8",
+        );
+
+        const testInputFile2 = readFileSync(
+          testDataDirectory + "test-solve-2.json",
+          "utf-8",
+        );
+
+        const program2 = LinearProgram.deserialize(testInputFile2);
+
+        const testInputFile3 = readFileSync(
+          testDataDirectory + "test-solve-3.json",
+          "utf-8",
+        );
+
+        const program3 = LinearProgram.deserialize(testInputFile3);
+
+        program2["isStandardForm"] = true;
+        program2["isSimplexForm"] = true;
+
+        program2["solveSimplexRecursive"](new Set([2]));
+
+        const program2Copy = LinearProgram.deserialize(testInputFile2);
+
+        program2Copy.solveSimplex();
+
+        program3.solveSimplex();
+
+        writeFileSync(
+          testDataDirectory + "result-solve-2-auto.json",
+          program2.serialize(),
+          "utf-8",
+        );
+
+        writeFileSync(
+          testDataDirectory + "result-solve-3-auto.json",
+          program3.serialize(),
+          "utf-8",
+        );
+
+        writeFileSync(
+          testDataDirectory + "result-solve-2-auto-program.json",
+          program2Copy.serialize(),
           "utf-8",
         );
       });

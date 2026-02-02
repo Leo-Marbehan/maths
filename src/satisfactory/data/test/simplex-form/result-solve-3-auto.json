@@ -3,14 +3,10 @@
   "coefficients": [
     0,
     0,
-    -4,
-    12,
-    -16,
+    -146,
     0
   ],
   "restrictions": [
-    "non-negative",
-    "non-negative",
     "non-negative",
     "non-negative",
     "non-negative",
@@ -23,9 +19,7 @@
       "coefficients": [
         1,
         0,
-        0,
-        1,
-        0,
+        -3,
         0
       ]
     },
@@ -35,9 +29,7 @@
       "coefficients": [
         0,
         1,
-        1,
-        -2,
-        1,
+        -4,
         0
       ]
     },
@@ -47,12 +39,10 @@
       "coefficients": [
         0,
         0,
-        -1,
         2,
-        -2,
         1
       ]
     }
   ],
-  "constant": 122
+  "constant": 112
 }

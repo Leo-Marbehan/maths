@@ -318,8 +318,15 @@ export class LinearProgram {
   }
 
   // MARK: Simplex
-  public solveSimplex(): number[] | "unbounded" | "infeasible" {
-    const standardSnapshot = this.formatToIntermediateSimplex();
+  public solveSimplex(): Set<number> | "unbounded" | "infeasible" {
+    this.standardize();
+
+    const standardForm = this.getSnapshot();
+
+    this.formatToIntermediateSimplex();
+
+    const numberOfAddedVariables = this.m;
+    const numberOfOriginalVariables = this.n - numberOfAddedVariables;
 
     /**
      * Indexes of the basic feasible solution, i.e. the indexes of the
@@ -327,29 +334,254 @@ export class LinearProgram {
      */
     const zeroVariables = new Set<number>();
 
-    for (let i = 0; i < this.n - this.m; i++) {
+    for (let i = 0; i < numberOfOriginalVariables; i++) {
       zeroVariables.add(i);
     }
 
-    const intermediateSolution = this.solveSimplexRecursive(zeroVariables);
+    const intermediateZeroVariables = this.solveSimplexRecursive(zeroVariables);
 
     if (
-      intermediateSolution === "unbounded" ||
-      intermediateSolution === "infeasible"
+      intermediateZeroVariables === "unbounded" ||
+      intermediateZeroVariables === "infeasible"
     ) {
-      return intermediateSolution;
+      return intermediateZeroVariables;
     }
 
-    // TODO Check before formatting back
+    const intermediateObjective =
+      this._constant +
+      this.coefficients.reduce((acc, c, i) => {
+        if (intermediateZeroVariables.has(i)) {
+          return acc;
+        }
 
-    this.formatFromIntermediateSimplex(standardSnapshot, intermediateSolution);
+        return acc + c;
+      }, 0);
 
-    return this.solveSimplexRecursive();
+    if (intermediateObjective < 0) {
+      return "infeasible";
+    }
+
+    const constraintsToRemove = new Set<number>();
+    const variablesToRemove = new Set<number>();
+
+    for (let i = numberOfOriginalVariables; i < this.n; i++) {
+      if (!intermediateZeroVariables.has(i)) {
+        const baseIndex = this.constraints.findIndex((constraint) => {
+          const coefficient = constraint.coefficients[i];
+
+          if (coefficient === undefined) {
+            throw new LinearProgramSizeError(
+              `Constraint coefficient at index ${i} is undefined in program with ${this.n} variables`,
+            );
+          }
+
+          return coefficient === 1;
+        });
+
+        if (baseIndex === -1) {
+          throw new LinearProgramSolutionError(
+            "Non zero variable is not a basic variable",
+          );
+        }
+
+        const constraint = this.constraints[baseIndex];
+
+        if (constraint === undefined) {
+          throw new LinearProgramSizeError(
+            `Constraint at index ${baseIndex} is undefined in program with ${this.m} constraints`,
+          );
+        }
+
+        const pivotVariableIndex = constraint.coefficients.findIndex(
+          (c, i) => i < numberOfOriginalVariables && c !== 0,
+        );
+
+        if (pivotVariableIndex === -1) {
+          constraintsToRemove.add(baseIndex);
+          variablesToRemove.add(i);
+        } else {
+          this.pivot(baseIndex, pivotVariableIndex);
+          if (!intermediateZeroVariables.delete(pivotVariableIndex)) {
+            throw new LinearProgramSolutionError(
+              "Pivot variable is not a zero variable",
+            );
+          }
+
+          if (intermediateZeroVariables.has(i)) {
+            throw new LinearProgramSolutionError(
+              "Leaving variable is a zero variable",
+            );
+          }
+
+          intermediateZeroVariables.add(i);
+        }
+      }
+    }
+
+    for (const constraintIndex of Array.from(constraintsToRemove)
+      .sort()
+      .reverse()) {
+      this.constraints.splice(constraintIndex, 1);
+    }
+
+    for (const variableIndex of Array.from(variablesToRemove)
+      .sort()
+      .reverse()) {
+      this.coefficients.splice(variableIndex, 1);
+      this.restrictions.splice(variableIndex, 1);
+      this.constraints.forEach((constraint) => {
+        constraint.coefficients.splice(variableIndex, 1);
+      });
+    }
+
+    this.n -= variablesToRemove.size;
+    this.m -= constraintsToRemove.size;
+
+    const basis: number[] = [];
+
+    for (
+      let constraintIndex = 0;
+      constraintIndex < numberOfAddedVariables;
+      constraintIndex++
+    ) {
+      const constraint = this.constraints[constraintIndex];
+
+      if (constraint === undefined) {
+        throw new LinearProgramSizeError(
+          `Constraint at index ${constraintIndex} is undefined in program with ${this.m} constraints`,
+        );
+      }
+
+      const basisIndex = constraint.coefficients.findIndex(
+        (c, coefficientIndex) => {
+          if (c !== 1 || intermediateZeroVariables.has(coefficientIndex)) {
+            return false;
+          }
+
+          if (coefficientIndex >= numberOfOriginalVariables) {
+            throw new LinearProgramSolutionError(
+              "Basis variable is an intermediate variable",
+            );
+          }
+
+          return this.constraints.every(
+            (c, currentConstraintIndex) =>
+              c.coefficients[coefficientIndex] === 0 ||
+              currentConstraintIndex === constraintIndex,
+          );
+        },
+      );
+
+      if (basisIndex === -1) {
+        console.log(intermediateZeroVariables);
+        console.log(this.serialize());
+        throw new LinearProgramSolutionError(
+          "No basis variable found for constraint",
+        );
+      }
+
+      basis.push(basisIndex);
+    }
+
+    const basisSet = new Set(basis);
+
+    // Restore the original form
+    for (let i = numberOfOriginalVariables; i < this.n; i++) {
+      intermediateZeroVariables.delete(i);
+    }
+
+    this.coefficients = this.coefficients.slice(0, numberOfOriginalVariables);
+    this.restrictions = this.restrictions.slice(0, numberOfOriginalVariables);
+
+    // Use basis to restore the objective coefficients and constant
+    this.coefficients = this.coefficients.map((c, i) => {
+      if (basisSet.has(i)) {
+        return 0;
+      }
+
+      const originalCoefficient = standardForm.coefficients[i];
+
+      if (originalCoefficient === undefined) {
+        throw new LinearProgramSizeError(
+          `Original coefficient at index ${i} is undefined in program with ${this.n} variables`,
+        );
+      }
+
+      const newCoefficient =
+        originalCoefficient +
+        this.constraints.reduce((acc, constraint, constraintIndex) => {
+          const coefficient = constraint.coefficients[i];
+
+          if (coefficient === undefined) {
+            throw new LinearProgramSizeError(
+              `Constraint coefficient at index ${i} is undefined in program with ${this.n} variables`,
+            );
+          }
+
+          const basisIndex = basis[constraintIndex];
+
+          if (basisIndex === undefined) {
+            throw new LinearProgramSizeError(
+              `Basis index at index ${constraintIndex} is undefined in program with ${this.m} constraints`,
+            );
+          }
+
+          const basisCoefficient = standardForm.coefficients[basisIndex];
+
+          if (basisCoefficient === undefined) {
+            throw new LinearProgramSizeError(
+              `Basis coefficient at index ${basisIndex} is undefined in program with ${this.n} variables`,
+            );
+          }
+
+          return acc + coefficient * basisCoefficient;
+        }, 0);
+
+      return newCoefficient;
+    });
+
+    this.constant = this.constraints.reduce(
+      (acc, constraint, constraintIndex) => {
+        const basisIndex = basis[constraintIndex];
+
+        if (basisIndex === undefined) {
+          throw new LinearProgramSizeError(
+            `Basis index at index ${constraintIndex} is undefined in program with ${this.m} constraints`,
+          );
+        }
+
+        const basisCoefficient = standardForm.coefficients[basisIndex];
+
+        if (basisCoefficient === undefined) {
+          throw new LinearProgramSizeError(
+            `Basis coefficient at index ${basisIndex} is undefined in program with ${this.n} variables`,
+          );
+        }
+
+        return acc + constraint.value * basisCoefficient;
+      },
+      0,
+    );
+
+    this.constraints.forEach((constraint) => {
+      constraint.coefficients = constraint.coefficients.slice(
+        0,
+        numberOfOriginalVariables,
+      );
+    });
+
+    this.n = numberOfOriginalVariables;
+    this.isStandardForm = true;
+    this.isSimplexForm = true;
+
+    console.log(this.serialize(), "->", intermediateZeroVariables);
+
+    return this.solveSimplexRecursive(intermediateZeroVariables);
   }
 
   private solveSimplexRecursive(
     zeroVariables: Set<number>,
-  ): number[] | "unbounded" | "infeasible" {
+  ): Set<number> | "unbounded" | "infeasible" {
     if (!this.isSimplexForm) {
       throw new LinearProgramSolutionError("Program is not in simplex form");
     }
@@ -362,7 +594,7 @@ export class LinearProgram {
 
     if (firstPositiveCoefficientIndex === -1) {
       // Optimal solution found
-      return Array.from(zeroVariables);
+      return zeroVariables;
     }
 
     // Bland's rule
@@ -372,16 +604,16 @@ export class LinearProgram {
     let smallestRatioContraint: Constraint | undefined;
 
     for (let i = 0; i < this.m; i++) {
-      smallestRatioContraint = this.constraints[i];
+      const constraint = this.constraints[i];
 
-      if (smallestRatioContraint === undefined) {
+      if (constraint === undefined) {
         throw new LinearProgramSizeError(
           `Constraint at index ${i} is undefined in program with ${this.m} constraints`,
         );
       }
 
       const coefficient =
-        smallestRatioContraint.coefficients[firstPositiveCoefficientIndex];
+        constraint.coefficients[firstPositiveCoefficientIndex];
 
       if (coefficient === undefined) {
         throw new LinearProgramSizeError(
@@ -389,11 +621,16 @@ export class LinearProgram {
         );
       }
 
-      const ratio = smallestRatioContraint.value / coefficient;
+      if (coefficient <= 0) {
+        continue;
+      }
+
+      const ratio = constraint.value / coefficient;
 
       if (ratio < smallestRatio) {
         smallestRatio = ratio;
         smallestRatioIndex = i;
+        smallestRatioContraint = constraint;
       }
     }
 
@@ -436,15 +673,40 @@ export class LinearProgram {
         );
       }
 
+      // console.log(`i: ${i}`);
+      // console.log(`coefficient: ${coefficient}`);
+      // console.log(`constraintCoefficient: ${constraintCoefficient}`);
+      // console.log(
+      //   `smallestRatioContraint.coefficients: ${smallestRatioContraint.coefficients.toString()}`,
+      // );
+
       if (
         constraintCoefficient !== 0 &&
-        smallestRatioContraint.coefficients.every(
-          (c, j) => c === 0 || (c === 1 && j === i),
-        )
+        this.constraints.every((c, j) => {
+          const coefficient = c.coefficients[i];
+
+          if (coefficient === undefined) {
+            throw new LinearProgramSizeError(
+              `Constraint coefficient at index ${i} is undefined in program with ${this.m} constraints`,
+            );
+          }
+
+          return (
+            coefficient === 0 || (j === smallestRatioIndex && coefficient === 1)
+          );
+        })
       ) {
         leavingVariableIndexes.push(i);
       }
     }
+
+    // console.log("before pivot");
+    // console.log(
+    //   `firstPositiveCoefficientIndex: ${firstPositiveCoefficientIndex}`,
+    // );
+    // console.log(`smallestRatioIndex: ${smallestRatioIndex}`);
+    // console.log(`leavingVariableIndexes: ${leavingVariableIndexes.toString()}`);
+    // console.log(this.serialize());
 
     if (leavingVariableIndexes.length === 0) {
       throw new LinearProgramSolutionError("No leaving variable found");
@@ -471,6 +733,20 @@ export class LinearProgram {
       throw new LinearProgramSolutionError("Leaving variable is zero variable");
     }
     zeroVariables.add(leavingVariableIndex);
+
+    console.log(`smallestRatioIndex: ${smallestRatioIndex}`);
+    console.log(
+      `firstPositiveCoefficientIndex: ${firstPositiveCoefficientIndex}`,
+    );
+    console.log(`leavingVariableIndex: ${leavingVariableIndex}`);
+    console.log(zeroVariables);
+    console.log(this.coefficients);
+    this.constraints.forEach((c) => {
+      console.log(
+        c.coefficients.map((c) => c.toString().padStart(5)),
+        c.value,
+      );
+    });
 
     return this.solveSimplexRecursive(zeroVariables);
   }
@@ -578,12 +854,6 @@ export class LinearProgram {
       // bi
       const currentConstraintValue = snapshotConstraint.value;
 
-      console.log(`i: ${i}`);
-      console.log(`bi: ${currentConstraintValue}`);
-      console.log(`ais: ${pivotVariableCurrentConstraintCoefficient}`);
-      console.log(`br: ${pivotConstraintValue}`);
-      console.log(`ars: ${pivotVariablePivotConstraintCoefficient}`);
-
       if (i === constraintIndex) {
         // i = r
         // bi = br / ars
@@ -668,14 +938,12 @@ export class LinearProgram {
    *
    * @returns A snapshot of the standard form
    */
-  private formatToIntermediateSimplex(): LinearProgramSnapshot {
+  private formatToIntermediateSimplex() {
     if (this.isSimplexForm) {
-      return this.getSnapshot();
+      return;
     }
 
     this.standardize();
-
-    const snapshot = this.getSnapshot();
 
     // Make all equality values positive
     for (const constraint of this.constraints) {
@@ -732,32 +1000,6 @@ export class LinearProgram {
     }
 
     this.isSimplexForm = true;
-
-    return snapshot;
-  }
-
-  private formatFromIntermediateSimplex(
-    standardSnapshot: LinearProgramSnapshot,
-    intermediateSolution: number[],
-  ) {
-    // TODO
-  }
-
-  private getObjective(solution: number[]): number {
-    return (
-      this._constant +
-      this.coefficients
-        .map((c, i) => {
-          if (solution[i] === undefined) {
-            throw new LinearProgramSizeError(
-              `Solution at index ${i} is undefined in program with ${this.n} variables`,
-            );
-          }
-
-          return c * solution[i];
-        })
-        .reduce((a, b) => a + b, 0)
-    );
   }
 
   // MARK: Snapshots
@@ -798,6 +1040,12 @@ export class LinearProgram {
     this.constraints = snapshot.constraints;
     this.isStandardForm = snapshot.isStandardForm;
     this.isSimplexForm = snapshot.isSimplexForm;
+  }
+
+  static fromSnapshot(snapshot: LinearProgramSnapshot): LinearProgram {
+    const program = new LinearProgram(snapshot.objectiveType);
+    program.applySnapshot(snapshot);
+    return program;
   }
 
   // MARK: Serialize

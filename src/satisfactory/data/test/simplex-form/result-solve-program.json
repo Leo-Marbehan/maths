@@ -1,12 +1,12 @@
 {
   "objectiveType": "maximize",
   "coefficients": [
-    0,
-    0,
     -4,
-    12,
-    -16,
-    0
+    0,
+    0,
+    0,
+    -8,
+    -4
   ],
   "restrictions": [
     "non-negative",
@@ -21,38 +21,38 @@
       "type": "=",
       "value": 4,
       "coefficients": [
+        2,
+        0,
         1,
         0,
-        0,
-        1,
-        0,
-        0
+        2,
+        -1
       ]
     },
     {
       "type": "=",
-      "value": 2,
+      "value": 6,
       "coefficients": [
         0,
         1,
-        1,
-        -2,
-        1,
-        0
-      ]
-    },
-    {
-      "type": "=",
-      "value": 0,
-      "coefficients": [
         0,
         0,
         -1,
-        2,
-        -2,
         1
+      ]
+    },
+    {
+      "type": "=",
+      "value": 4,
+      "coefficients": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
       ]
     }
   ],
-  "constant": 122
+  "constant": 154
 }
